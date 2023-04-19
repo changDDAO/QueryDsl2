@@ -2,6 +2,7 @@ package com.changddao.QueryDsl2.entity;
 
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.aspectj.lang.annotation.Before;
 import org.assertj.core.api.Assertions;
@@ -17,6 +18,7 @@ import javax.persistence.Query;
 import java.util.List;
 
 import static com.changddao.QueryDsl2.entity.QMember.*;
+import static com.changddao.QueryDsl2.entity.QTeam.*;
 import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
@@ -103,6 +105,118 @@ public class QueryBasicTest {
         for (Member member : result) {
             System.out.println("member = " + member);
         }
+
+    }
+    @Test
+    public void paging1 (){
+    //given
+    List<Member> result = queryFactory
+            .selectFrom(member)
+            .orderBy(member.username.desc())
+            .offset(1)
+            .limit(2)
+            .fetch();
+    assertThat(result.size()).isEqualTo(2);
+
+
+
+    //when
+
+
+
+    //then
+
+
+    }
+    @Test
+    public void paging2 (){
+    //given
+        QueryResults<Member> result = queryFactory.selectFrom(member)
+                .orderBy(member.username.desc())
+                .offset(1)
+                .limit(2)
+                .fetchResults();
+        assertThat(result.getResults().size()).isEqualTo(2);
+        assertThat(result.getTotal()).isEqualTo(4);
+
+        //when
+
+
+
+    //then
+
+
+    }
+    @Test
+    public void aggregation(){
+    //given
+        List<Tuple> fetch = queryFactory.select(member.count(),
+                        member.age.avg(),
+                        member.age.sum())
+                .from(member)
+                .fetch();
+        Tuple tuple = fetch.get(0);//when
+        assertThat(tuple.get(member.count())).isEqualTo(4);
+
+
+            //then
+
+
+    }
+    @Test
+    public void group(){
+    //given
+        List<Tuple> result = queryFactory.select(team.name, member.age.avg())
+                .from(member)
+                .join(member.team, team)
+                .groupBy(team.name)
+                .fetch();
+
+
+        //when
+     Tuple teamA = result.get(0);
+     Tuple teamB = result.get(1);
+
+
+    //then
+        assertThat(teamA.get(team.name)).isEqualTo("teamA");
+        assertThat(teamB.get(team.name)).isEqualTo("teamB");
+
+        assertThat(teamA.get(member.age.avg())).isEqualTo(15);
+
+
+
+    }
+    @Test
+    public void join(){
+    //given
+        List<Member> result = queryFactory.select(member)
+                .from(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+
+        //when
+            assertThat(result).extracting("username")
+                    .containsExactly("member1","member2");
+
+
+    //then
+    }
+    // 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조인, 회원은 모두 조회
+    @Test
+    public void join_on_filtering(){
+    //given
+
+
+
+    //when
+
+
+
+    //then
+
 
     }
 
