@@ -13,6 +13,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 import javax.persistence.Query;
 
 import java.util.List;
@@ -208,6 +210,68 @@ public class QueryBasicTest {
     @Test
     public void join_on_filtering(){
     //given
+        List<Tuple> members = queryFactory.select(member, team)
+                .from(member)
+                .leftJoin(member.team, team).on(team.name.eq("teamA"))
+                .fetch();
+
+
+        //when
+        for(Tuple tuple : members){
+            System.out.println("tuple = " + tuple);
+        }
+
+
+    //then
+    }
+    @PersistenceUnit
+    EntityManagerFactory emf;
+    @Test
+    public void fetchJoinNo(){
+
+    //given
+    em.flush();
+    em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).isFalse(); //페치조인 미적용
+
+
+
+
+        //when
+
+
+
+    //then
+
+
+    }
+    @Test
+    public void fetchJoin() {
+
+        //given
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .join(member.team,team).fetchJoin()
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).isTrue();
+    }
+
+    @Test
+    public void subQuery(){
+    //given
 
 
 
@@ -219,5 +283,6 @@ public class QueryBasicTest {
 
 
     }
+
 
 }
