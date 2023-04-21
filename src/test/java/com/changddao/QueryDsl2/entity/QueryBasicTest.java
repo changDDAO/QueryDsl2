@@ -1,8 +1,15 @@
 package com.changddao.QueryDsl2.entity;
 
+import com.changddao.QueryDsl2.dto.MemberDto;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Predicate;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.aspectj.lang.annotation.Before;
 import org.assertj.core.api.Assertions;
@@ -272,10 +279,16 @@ public class QueryBasicTest {
     @Test
     public void subQuery(){
     //given
+        QMember memberSub = new QMember("memberSub");
 
+        List<Member> result = queryFactory.selectFrom(member)
+                .where(member.age.goe(JPAExpressions.select(memberSub.age.avg())
+                        .from(memberSub)))
+                .fetch();
+        //when
+        assertThat(result).extracting("age")
+                .containsExactly(30,40);
 
-
-    //when
 
 
 
@@ -283,6 +296,210 @@ public class QueryBasicTest {
 
 
     }
+
+    @Test
+    public void subQueryIn(){
+        //given
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory.selectFrom(member)
+                .where(member.age.in(JPAExpressions.select(memberSub.age)
+                        .from(memberSub)
+                        .where(memberSub.age.gt(10))))
+                .fetch();
+        //when
+        assertThat(result).extracting("age")
+                .containsExactly(20,30,40);
+
+        //then
+         }
+
+         @Test
+         public void constant(){
+         //given
+             List<Tuple> result = queryFactory
+                     .select(member.username, Expressions.constant("A"))
+                     .from(member)
+                     .fetch();
+
+
+             //when
+            for(Tuple tuple : result){
+                System.out.println("tuple = "+ tuple);
+            }
+
+
+         //then
+
+
+         }
+         @Test
+         public void concat(){
+         //given  username_age
+             List<String> result = queryFactory.select(member.username.concat("_").concat(member.age.stringValue()))
+                     .from(member)
+                     .fetch();
+
+
+             //when
+             for (String s : result) {
+                 System.out.println("s = " + s);
+             }
+
+
+         //then
+
+
+         }
+
+    @Test
+    public void findDtoByJPQL(){
+    //given
+        List<MemberDto> resultList = em.createQuery("select new com.changddao.QueryDsl2.dto.MemberDto(m.username,m.age)" +
+                " from Member m", MemberDto.class).getResultList();
+
+
+        //when
+        for (MemberDto memberDto : resultList) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+
+    //then
+
+
+    }
+    @Test
+    public void findDtoByField(){
+    //given
+        List<MemberDto> resultList = queryFactory.select(Projections.fields(MemberDto.class,
+                member.username,member.age)).from(member)
+                .fetch();
+
+
+        //when
+        for (MemberDto memberDto : resultList) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+
+
+
+        //when
+
+
+
+    //then
+
+
+    }
+    @Test
+    public void findDtoByConstructor(){
+        //given
+        List<MemberDto> resultList = queryFactory.select(Projections.constructor(MemberDto.class,
+                        member.username,member.age)).from(member)
+                .fetch();
+
+
+        //when
+        for (MemberDto memberDto : resultList) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+
+
+
+        //when
+
+
+
+        //then
+
+
+    }
+    @Test
+    public void dynamicQuery_BooleanBuilder(){
+    //given
+    String usernameParam = "member1";
+    Integer ageParam = 10;
+
+
+    //when
+        List<Member> result = searchMember1(usernameParam,ageParam);
+        assertThat(result.size()).isEqualTo(1);
+
+    }
+
+    private List<Member> searchMember1(String usernameCond, Integer ageCond) {
+        BooleanBuilder builder = new BooleanBuilder();
+        if(usernameCond!=null){
+            builder.and(member.username.eq(usernameCond));
+        }
+        if(ageCond!=null){
+            builder.and(member.age.eq(ageCond));
+        }
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(builder)
+                .fetch();
+        return result;
+
+    }
+    @Test
+    public void dynamicQuery_WhereParam(){
+        //given
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+
+        //when
+        List<Member> result = searchMember2(usernameParam,ageParam);
+        assertThat(result.size()).isEqualTo(1);
+
+
+
+
+        //then
+
+
+    }
+
+    private List<Member> searchMember2(String usernameCond, Integer ageCond) {
+        return queryFactory.selectFrom(member)
+                .where(usernameEq(usernameCond), ageEq(ageCond))
+                .fetch();
+    }
+
+    private BooleanExpression usernameEq(String usernameCond) {
+        if(usernameCond==null)
+            return null;
+        else return member.username.eq(usernameCond);
+
+    }
+
+    private BooleanExpression ageEq(Integer ageCond) {
+        return ageCond!=null ? member.age.eq(ageCond) : null;
+
+    }
+
+    @Test
+    public void bulkUpdate(){
+    //given
+        long count = queryFactory.update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+
+        //when
+        assertThat(count).isEqualTo(2);
+
+
+    //then
+
+
+    }
+
 
 
 }
