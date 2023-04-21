@@ -1,6 +1,7 @@
 package com.changddao.QueryDsl2.entity;
 
 import com.changddao.QueryDsl2.dto.MemberDto;
+import com.changddao.QueryDsl2.dto.MemberSearchCondition;
 import com.fasterxml.jackson.databind.util.StdDateFormat;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
@@ -499,6 +500,7 @@ public class QueryBasicTest {
 
 
     }
+
 
 
 
