@@ -1,5 +1,6 @@
 package com.changddao.QueryDsl2.entity;
 
+import org.hibernate.boot.TempTableDdlTransactionHandling;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Commit;
@@ -45,6 +46,21 @@ class MemberTest {
             System.out.println("->member.getTeam() = " + member.getTeam());
 
         }
+
+    }
+    @Test
+    public void memberJoinTest(){
+    //given
+        Member member = new Member("changho", 17);
+        em.persist(member);
+
+
+    //when
+
+
+
+    //then
+
 
     }
 }
